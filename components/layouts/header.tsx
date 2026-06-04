@@ -72,10 +72,10 @@ const Header = () => {
   };
 
   const handleRevoke = async () => {
-    const idToken = localStorage.getItem("id_token");
+    const accessToken = localStorage.getItem("access_token");
     const refreshToken = localStorage.getItem("refresh_token");
 
-    if (!idToken || !refreshToken) {
+    if (!accessToken || !refreshToken) {
       toast.error("Vui lòng đăng nhập để tiếp tục.");
       setShowRevokeDialog(false);
       return;
@@ -88,7 +88,7 @@ const Header = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           refresh_token: refreshToken,
