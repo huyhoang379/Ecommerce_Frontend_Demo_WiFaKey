@@ -38,12 +38,16 @@ interface JwtPayload {
 const RefreshTokenPage = () => {
   const [refreshToken, setRefreshToken] = useState("");
   const [oldAccessToken, setOldAccessToken] = useState("");
+  const [oldExpiresAt, setOldExpiresAt] = useState<number | null>(null);
   const [newAccessToken, setNewAccessToken] = useState("");
+  const [newExpiresAt, setNewExpiresAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   // 1. Load Token từ LocalStorage
   useEffect(() => {
     setOldAccessToken(localStorage.getItem("access_token") || "");
+    const exp = localStorage.getItem("access_token_expires_at");
+    if (exp) setOldExpiresAt(Number(exp));
     setRefreshToken(localStorage.getItem("refresh_token") || "");
   }, []);
 
@@ -66,6 +70,12 @@ const RefreshTokenPage = () => {
       if (!data.idpError) {
         setNewAccessToken(data.accessToken);
         localStorage.setItem("access_token", data.accessToken);
+
+        if (data.expiresIn) {
+          const expiresAt = Date.now() + data.expiresIn * 1000;
+          localStorage.setItem("access_token_expires_at", expiresAt.toString());
+          setNewExpiresAt(expiresAt);
+        }
 
         toast.success("Nhận Access Token thành công");
 
@@ -130,6 +140,7 @@ const RefreshTokenPage = () => {
               token={oldAccessToken}
               title="OLD Access Token"
               type="old"
+              expiresAt={oldExpiresAt}
             />
 
             {/* Mũi tên chuyển đổi (chỉ hiện desktop) */}
@@ -142,6 +153,7 @@ const RefreshTokenPage = () => {
               token={newAccessToken}
               title="NEW Access Token"
               type="new"
+              expiresAt={newExpiresAt}
             />
           </div>
         </CardContent>
@@ -155,19 +167,20 @@ const TokenDetailViewer = ({
   token,
   title,
   type,
+  expiresAt,
 }: {
   token: string;
   title: string;
   type: "old" | "new";
+  expiresAt?: number | null;
 }) => {
   if (!token) {
     return (
       <div
-        className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 min-h-[400px] ${
-          type === "new"
-            ? "bg-green-50/30 border-green-200"
-            : "bg-slate-50 border-slate-200"
-        }`}
+        className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 min-h-[400px] ${type === "new"
+          ? "bg-green-50/30 border-green-200"
+          : "bg-slate-50 border-slate-200"
+          }`}
       >
         <ShieldCheck className="w-10 h-10 mb-2 opacity-20" />
         <p className="text-sm font-medium">Waiting for data...</p>
@@ -196,9 +209,62 @@ const TokenDetailViewer = ({
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
-    return (
-      <div className="text-red-500 p-4 border rounded">Token không hợp lệ</div>
-    );
+    // Nếu không decode được -> Đây là Opaque Token
+    // let timeStrOpaque = "";
+    // let isExpiredOpaque = false;
+    // if (expiresAt) {
+    //   const now = Date.now();
+    //   isExpiredOpaque = expiresAt < now;
+    //   const diff = Math.floor(Math.abs(expiresAt - now) / 1000);
+    //   const m = Math.floor(diff / 60);
+    //   const s = diff % 60;
+    //   timeStrOpaque = isExpiredOpaque ? `${m}p ${s}s trước` : `còn ${m}p ${s}s`;
+    // }
+
+    // return (
+    //   <div
+    //     className={`border rounded-xl flex flex-col overflow-hidden transition-all duration-500 ${isExpiredOpaque ? "bg-red-950/20 border-red-900/50" : "bg-slate-800 border-slate-700"
+    //       }`}
+    //   >
+    //     <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
+    //       <h3 className="font-bold text-sm text-slate-200">{title}</h3>
+    //       <div className="flex gap-2 items-center">
+    //         {expiresAt && (
+    //           <span className={`text-[10px] font-bold ${isExpiredOpaque ? 'text-red-400' : 'text-green-400'}`}>
+    //             {isExpiredOpaque ? "EXPIRED" : "VALID"} ({timeStrOpaque})
+    //           </span>
+    //         )}
+    //         <Badge className="bg-purple-600 hover:bg-purple-700 text-[10px] px-2 py-0.5 h-5">
+    //           OPAQUE TOKEN
+    //         </Badge>
+    //       </div>
+    //     </div>
+    //     <div className="p-4 flex-1 flex flex-col items-center justify-center text-slate-400 min-h-[250px] space-y-4">
+    //       <ShieldCheck className="w-12 h-12 text-purple-400/50" />
+    //       <p className="text-sm font-medium text-center">
+    //         Token mã hoá một chiều (Opaque).<br />
+    //         Không chứa payload có thể giải mã.
+    //       </p>
+    //       {expiresAt && (
+    //         <div className="mt-2 text-xs flex flex-col items-center gap-1 border border-white/5 bg-black/20 p-2 rounded w-full">
+    //           <span className="text-slate-500 font-bold uppercase text-[10px]">Expiration</span>
+    //           <span className="font-mono text-slate-300">{new Date(expiresAt).toLocaleString("vi-VN")}</span>
+    //         </div>
+    //       )}
+    //     </div>
+    //     <div className="bg-black/20 p-2 text-center border-t border-white/5">
+    //       <details className="text-[10px] text-slate-400 cursor-pointer group">
+    //         <summary className="group-hover:text-purple-400 font-medium transition-colors">
+    //           Show Raw Token
+    //         </summary>
+    //         <p className="mt-2 text-[9px] font-mono break-all text-left bg-slate-900 p-2 rounded border border-white/10 text-slate-300">
+    //           {token}
+    //         </p>
+    //       </details>
+    //     </div>
+    //   </div>
+    // );
+    return <OpaqueTokenViewer token={token} title={title} expiresAt={expiresAt} />;
   }
 
   // Style dynamic theo loại token
@@ -216,9 +282,8 @@ const TokenDetailViewer = ({
       {/* HEADER */}
       <div className="p-4 border-b border-black/5 flex justify-between items-center bg-white/50">
         <h3
-          className={`font-bold text-sm ${
-            type === "new" ? "text-green-700" : "text-slate-700"
-          }`}
+          className={`font-bold text-sm ${type === "new" ? "text-green-700" : "text-slate-700"
+            }`}
         >
           {title}
         </h3>
@@ -260,9 +325,8 @@ const TokenDetailViewer = ({
                   {fmtDate(decoded?.exp)}
                 </span>
                 <span
-                  className={`text-[10px] font-bold ${
-                    isExpired ? "text-red-500" : "text-green-600"
-                  }`}
+                  className={`text-[10px] font-bold ${isExpired ? "text-red-500" : "text-green-600"
+                    }`}
                 >
                   ({timeStr})
                 </span>
@@ -327,3 +391,104 @@ const TokenDetailViewer = ({
 };
 
 export default RefreshTokenPage;
+
+const OpaqueTokenViewer = ({
+  token,
+  title,
+  expiresAt,
+}: {
+  token: string;
+  title: string;
+  expiresAt?: number | null;
+}) => {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [progress, setProgress] = useState<number>(0);
+  const [isExpired, setIsExpired] = useState(false);
+  useEffect(() => {
+    if (!expiresAt) return;
+
+    // Đọc expires_in từ localstorage nếu có, mặc định 300s
+    const expiresInSec = Number(localStorage.getItem("access_token_expires_in")) || 300;
+    const totalDurationMs = expiresInSec * 1000;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const remainingMs = expiresAt - now;
+      if (remainingMs <= 0) {
+        setTimeLeft("Đã hết hạn");
+        setProgress(100);
+        setIsExpired(true);
+        clearInterval(interval);
+      } else {
+        const remainingSec = Math.floor(remainingMs / 1000);
+        const minutes = Math.floor(remainingSec / 60);
+        const seconds = remainingSec % 60;
+        setTimeLeft(`${minutes} phút ${seconds} giây`);
+        setIsExpired(false);
+        const percent = ((totalDurationMs - remainingMs) / totalDurationMs) * 100;
+        setProgress(percent);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+  return (
+    <div
+      className={`border rounded-xl flex flex-col overflow-hidden transition-all duration-500 ${isExpired ? "bg-red-950/20 border-red-900/50" : "bg-slate-800 border-slate-700"
+        }`}
+    >
+      <div className="p-4 border-b border-white/10 flex justify-between items-center bg-slate-900/50">
+        <h3 className="font-bold text-sm text-slate-200">{title}</h3>
+        <Badge className="bg-purple-600 hover:bg-purple-700 text-[10px] px-2 py-0.5 h-5">
+          OPAQUE TOKEN
+        </Badge>
+      </div>
+      <div className="p-4 flex-1 flex flex-col items-center text-slate-400 space-y-4">
+        <ShieldCheck className="w-12 h-12 text-purple-400/50 mt-4" />
+        <p className="text-sm font-medium text-center">
+          Token mã hoá một chiều (Opaque).<br />
+          Không chứa payload có thể giải mã.
+        </p>
+        {expiresAt && (
+          <div className={`mt-4 p-4 rounded-lg border w-full text-left flex flex-col gap-3 ${isExpired ? "bg-red-950/40 border-red-900/50" : "bg-slate-900 border-slate-700"
+            }`}>
+            <div className="flex flex-col mb-1 gap-1">
+              <div className="flex items-center gap-2">
+                <Clock className={`w-4 h-4 ${isExpired ? "text-red-400" : "text-purple-400"}`} />
+                <span className={`text-xs font-bold uppercase ${isExpired ? "text-red-400" : "text-purple-400"}`}>
+                  Token Lifespan
+                </span>
+              </div>
+              <span className={`text-sm font-mono font-bold mt-1 ${isExpired ? "text-red-400" : "text-slate-200"}`}>
+                {timeLeft || "Đang tính..."}
+              </span>
+            </div>
+            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
+              <div
+                className={`h-full transition-all duration-1000 ease-linear ${isExpired ? "bg-red-500" : "bg-purple-500"
+                  }`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+              <span>
+                Issued: {new Date(expiresAt - (Number(localStorage.getItem("access_token_expires_in")) || 300) * 1000).toLocaleTimeString()}
+              </span>
+              <span>
+                Expires: {new Date(expiresAt).toLocaleTimeString()}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="bg-black/20 p-2 text-center border-t border-white/5">
+        <details className="text-[10px] text-slate-400 cursor-pointer group">
+          <summary className="group-hover:text-purple-400 font-medium transition-colors">
+            Show Raw Token
+          </summary>
+          <p className="mt-2 text-[9px] font-mono break-all text-left bg-slate-900 p-2 rounded border border-white/10 text-slate-300">
+            {token}
+          </p>
+        </details>
+      </div>
+    </div>
+  );
+};

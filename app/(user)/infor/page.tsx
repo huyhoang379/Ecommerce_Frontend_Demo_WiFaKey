@@ -14,6 +14,7 @@ import { Clock } from "lucide-react"; // Thêm icon
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { API_BASE_URL } from "@/utils/env";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
 
 interface JwtPayload {
   sub?: string;
@@ -71,7 +72,9 @@ const UserInforPage = () => {
   }, [tokenClaims]);
 
   const handleGetData = async () => {
-    const token = localStorage.getItem("access_token");
+    // Sử dụng id_token vì access_token là dạng opaque token (không giải mã được)
+    // Backend (Ecommerce_Backend) cũng đang dùng JwtStrategy nên cần nhận JWT
+    const token = localStorage.getItem("id_token");
 
     if (!token) {
       setLoading(false);
@@ -86,12 +89,11 @@ const UserInforPage = () => {
       console.error("Invalid Token format", error);
     }
 
-    // 2. GỌI API
+    // 2. GỌI API sử dụng wrapper tự động làm mới token
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/users/me`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
           'ngrok-skip-browser-warning': 'true',
         },
@@ -121,17 +123,16 @@ const UserInforPage = () => {
             <CardDescription>Inspect Session & Token Data</CardDescription>
           </div>
           <div
-            className={`px-2 py-1 rounded text-xs font-bold ${
-              userInfo
+            className={`px-2 py-1 rounded text-xs font-bold ${userInfo
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
-            }`}
+              }`}
           >
             {loading
               ? "Checking..."
               : userInfo
-              ? "SERVER VERIFIED"
-              : "SERVER REJECTED"}
+                ? "SERVER VERIFIED"
+                : "SERVER REJECTED"}
           </div>
         </div>
       </CardHeader>
@@ -189,31 +190,27 @@ const UserInforPage = () => {
               <>
                 {/* --- PHẦN MỚI: TOKEN LIFESPAN --- */}
                 <div
-                  className={`p-4 rounded-lg border ${
-                    isExpired
+                  className={`p-4 rounded-lg border ${isExpired
                       ? "bg-red-50 border-red-200"
                       : "bg-blue-50 border-blue-200"
-                  }`}
+                    }`}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
                       <Clock
-                        className={`w-4 h-4 ${
-                          isExpired ? "text-red-500" : "text-blue-500"
-                        }`}
+                        className={`w-4 h-4 ${isExpired ? "text-red-500" : "text-blue-500"
+                          }`}
                       />
                       <span
-                        className={`text-xs font-bold uppercase ${
-                          isExpired ? "text-red-600" : "text-blue-600"
-                        }`}
+                        className={`text-xs font-bold uppercase ${isExpired ? "text-red-600" : "text-blue-600"
+                          }`}
                       >
                         Token Lifespan
                       </span>
                     </div>
                     <span
-                      className={`text-sm font-mono font-bold ${
-                        isExpired ? "text-red-600" : "text-blue-700"
-                      }`}
+                      className={`text-sm font-mono font-bold ${isExpired ? "text-red-600" : "text-blue-700"
+                        }`}
                     >
                       {timeLeft}
                     </span>
@@ -222,9 +219,8 @@ const UserInforPage = () => {
                   {/* Progress Bar thủ công (để không phụ thuộc component ngoài) */}
                   <div className="h-2 w-full bg-white rounded-full overflow-hidden border border-black/5">
                     <div
-                      className={`h-full transition-all duration-1000 ease-linear ${
-                        isExpired ? "bg-red-500" : "bg-blue-500"
-                      }`}
+                      className={`h-full transition-all duration-1000 ease-linear ${isExpired ? "bg-red-500" : "bg-blue-500"
+                        }`}
                       style={{ width: `${progress}%` }}
                     />
                   </div>

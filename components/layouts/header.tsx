@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/utils/env";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,6 +62,10 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    localStorage.removeItem("id_token");
+    localStorage.removeItem("access_token_expires_at");
+    localStorage.removeItem("access_token_expires_in");
+    localStorage.removeItem("user_infor");
     toast.success("Session cleared successfully!");
     router.push("/login");
     setTimeout(() => window.location.reload(), 100);
@@ -68,10 +73,10 @@ const Header = () => {
   };
 
   const handleRevoke = async () => {
-    const accessToken = localStorage.getItem("access_token");
+    const idToken = localStorage.getItem("id_token");
     const refreshToken = localStorage.getItem("refresh_token");
 
-    if (!accessToken || !refreshToken) {
+    if (!idToken || !refreshToken) {
       toast.error("Vui lòng đăng nhập để tiếp tục.");
       setShowRevokeDialog(false);
       return;
@@ -80,11 +85,10 @@ const Header = () => {
     setIsRevoking(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/revoke`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/auth/revoke`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           refresh_token: refreshToken,
@@ -101,7 +105,7 @@ const Header = () => {
           description: data.message || "Something went wrong.",
         });
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.log("Error revoke: ", error);
       toast.error("Revoke Refresh Token thất bại", {
@@ -136,11 +140,10 @@ const Header = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5"
-                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
-                  }`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${isActive
+                    ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
+                    }`}
                 >
                   {item.icon}
                   <span>{item.name}</span>
