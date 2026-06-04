@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/utils/env";
-import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,10 +84,11 @@ const Header = () => {
     setIsRevoking(true);
 
     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/auth/revoke`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/revoke`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           refresh_token: refreshToken,
@@ -141,8 +141,8 @@ const Header = () => {
                   key={item.href}
                   href={item.href}
                   className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${isActive
-                    ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
+                      ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5"
+                      : "text-slate-500 hover:text-slate-900 hover:bg-slate-200/50"
                     }`}
                 >
                   {item.icon}
