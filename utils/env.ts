@@ -6,4 +6,4 @@ export const FRONTEND_BASE_URL =
 
 export const OAUTH_LOGIN_URL =
   process.env.NEXT_PUBLIC_OAUTH_WIFAKEY_URL ||
-  "http://localhost:3000/oauth/authorize";
+  "http://localhost:3000/oauth/signin";

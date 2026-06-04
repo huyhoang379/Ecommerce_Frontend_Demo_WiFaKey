@@ -316,10 +316,6 @@ function CallbackContent() {
       // Store tokens in localstorage
       if (data.accessToken) {
         localStorage.setItem("access_token", data.accessToken);
-        if (data.expiresIn) {
-          const expiresAt = Date.now() + data.expiresIn * 1000;
-          localStorage.setItem("access_token_expires_at", expiresAt.toString());
-        }
       }
       if (data.idToken) {
         localStorage.setItem("id_token", data.idToken);
@@ -866,31 +862,11 @@ function CallbackContent() {
               {/* Access Token */}
               {exchangeResult.data.accessToken && (
                 <details className="bg-white p-3 rounded border">
-                  <summary className="cursor-pointer font-semibold text-sm flex items-center justify-between">
-                    <span>
-                      Access Token (
-                      {exchangeResult.data.accessToken.substring(0, 20)}...)
-                    </span>
+                  <summary className="cursor-pointer font-semibold text-sm">
+                    Access Token (
+                    {exchangeResult.data.accessToken.substring(0, 20)}...)
                   </summary>
                   <div className="mt-2 space-y-2">
-                    <div className="flex gap-4 text-xs mb-2">
-                      <div>
-                        <span className="text-gray-500">Type: </span>
-                        <span className="font-semibold text-purple-700">{exchangeResult.data.tokenType || "Bearer"}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Expires In: </span>
-                        <span className="font-semibold text-purple-700">{exchangeResult.data.expiresIn}s</span>
-                      </div>
-                      {exchangeResult.data.scope && (
-                        <div className="col-span-2">
-                          <span className="text-gray-600">Scope:</span>
-                          <span className="ml-2 font-semibold">
-                            {exchangeResult.data.scope}
-                          </span>
-                        </div>
-                      )}
-                    </div>
                     <div className="bg-slate-100 p-2 rounded overflow-auto max-h-32">
                       <code className="text-xs break-all">
                         {exchangeResult.data.accessToken}
@@ -916,20 +892,10 @@ function CallbackContent() {
               {/* ID Token */}
               {exchangeResult.data.idToken && (
                 <details className="bg-white p-3 rounded border">
-                  <summary className="cursor-pointer font-semibold text-sm flex items-center justify-between">
-                    <span>ID Token (JWT) - Decoded Payload</span>
+                  <summary className="cursor-pointer font-semibold text-sm">
+                    ID Token (JWT) - Decoded Payload
                   </summary>
                   <div className="mt-2 space-y-2">
-                    <div className="flex gap-4 text-xs mb-2">
-                      <div>
-                        <span className="text-gray-500">Type: </span>
-                        <span className="font-semibold text-purple-700">JWT</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Expires In: </span>
-                        <span className="font-semibold text-purple-700">900s</span>
-                      </div>
-                    </div>
                     <pre className="bg-slate-100 p-3 rounded overflow-auto max-h-48 text-xs">
                       {JSON.stringify(
                         decodeJWT(exchangeResult.data.idToken),
@@ -954,20 +920,10 @@ function CallbackContent() {
               {/* Refresh Token */}
               {exchangeResult.data.refreshToken && (
                 <details className="bg-white p-3 rounded border">
-                  <summary className="cursor-pointer font-semibold text-sm flex items-center justify-between">
-                    <span>Refresh Token</span>
+                  <summary className="cursor-pointer font-semibold text-sm">
+                    Refresh Token
                   </summary>
                   <div className="mt-2 space-y-2">
-                    <div className="flex gap-4 text-xs mb-2">
-                      <div>
-                        <span className="text-gray-500">Type: </span>
-                        <span className="font-semibold text-purple-700">Opaque (Bearer)</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Expires In: </span>
-                        <span className="font-semibold text-purple-700">604800s (7 days)</span>
-                      </div>
-                    </div>
                     <div className="bg-slate-100 p-2 rounded overflow-auto max-h-32">
                       <code className="text-xs break-all">
                         {exchangeResult.data.refreshToken}
@@ -990,6 +946,31 @@ function CallbackContent() {
                 </details>
               )}
 
+              {/* Token Metadata */}
+              <div className="bg-white p-3 rounded border text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-gray-600">Token Type:</span>
+                    <span className="ml-2 font-semibold">
+                      {exchangeResult.data.tokenType || "Bearer"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Expires In:</span>
+                    <span className="ml-2 font-semibold">
+                      {exchangeResult.data.expiresIn}s
+                    </span>
+                  </div>
+                  {exchangeResult.data.scope && (
+                    <div className="col-span-2">
+                      <span className="text-gray-600">Scope:</span>
+                      <span className="ml-2 font-semibold">
+                        {exchangeResult.data.scope}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -1000,7 +981,7 @@ function CallbackContent() {
           <>
             <Button
               className="flex-1 bg-green-600 hover:bg-green-700"
-              onClick={() => (window.location.href = "/infor")}
+              onClick={() => (window.location.href = "/dashboard")}
             >
               Go to Dashboard
             </Button>
